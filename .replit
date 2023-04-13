@@ -78,3 +78,7 @@ start = "typescript-language-server --stdio"
 
 [deployment]
 run = ["sh", "-c", "npm run start"]
+
+[auth]
+pageEnabled = false
+buttonEnabled = false

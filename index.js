@@ -1,36 +1,51 @@
 import express from 'express';
+import session from 'express-session';
+import crypto from 'crypto';
+
 import { createImage } from './stream/video/index.js'
 import { getAudio } from './stream/audio/index.js'
-import { oauth2Client, authorizationUrl } from './stream/transcode/oauth.js'
+import { oauth2Client, authorizationUrl } from './google/oauth.js'
 const app = express();
+
+// initialize app session to be carried over between requests
+app.use(session({
+  secret: crypto.randomBytes(64).toString('hex'), // unique session Id
+  resave: false,
+  saveUninitialized: true
+}));
+
 
 app.get('/', async (req, res) => {
   res.send('Welcome to Bilbox.ai!')
 });
 
 // Google Authorize
-app.get('/auth', async (req, res) => {
+app.get('/auth', (req, res) => {
   return res.redirect(authorizationUrl);
 });
 
 // Google OAuth Callback
 app.get('/oauth2callback', async (req, res) => {
-  const authorizationCode = req.query.code;
+  let responseSent = false;
 
+  const authorizationCode = req.query.code;
   const { tokens } = await oauth2Client.getToken(authorizationCode);
-console.log(tokens)
-  oauth2Client.setCredentials(tokens);
 
   // Store the tokens securely for later use
-  console.log(tokens.access_token);
-  console.log(tokens.refresh_token);
-  console.log(tokens.expiry_date);
+  oauth2Client.setCredentials(tokens);
 
-  res.send('Google Authorization successful!');
+  if (!responseSent){
+    responseSent = true;
+    console.log('Authenticated!');
+    // res.status(200).send('Google Authorization successful. Redirecting..');
+    setTimeout(() => {res.redirect('/stream');}, 3000);
+  }
 });
 
-
-
+// Live YouTube Stream
+app.get('/stream', async(req, res) => {
+   res.send('Stream coming soon!');
+});
 
 app.get('/image-gen/:topic', async (req, res) => {
   const imageString = await createImage({
@@ -41,11 +56,11 @@ app.get('/image-gen/:topic', async (req, res) => {
 })
 
 app.get('/audio-gen/:genre', async (req, res) => {
-  const { track, trackTitle, trackIdentifier, audioFile } = await getAudio({
+  const { audio, name } = await getAudio({
     genre: req?.params?.genre
   })
 
-  console.log(JSON.stringify({ track, trackTitle, trackIdentifier, audioFile }, null, 4))
+  console.log(JSON.stringify({ audio, name }, null, 4))
  
   // Create the HTML page with an audio player to stream the music
     const html = `
@@ -57,9 +72,9 @@ app.get('/audio-gen/:genre', async (req, res) => {
         <title>Streaming Music</title>
       </head>
       <body>
-        <h1>${trackTitle}</h1>
+        <h1>${name}</h1>
         <audio controls>
-          <source src="https://archive.org/download/${trackIdentifier}/${audioFile?.name}" type="audio/mpeg">
+          <source src="${audio}" type="audio/mpeg">
           Your browser does not support the audio element.
         </audio>
       </body>
