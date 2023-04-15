@@ -178,7 +178,7 @@ app.get('/stream-v1', async (req, res) => {
     console.info('picture')
     // Fetch a picture based on mood
     const imageString = await createImage({
-    topic: `abstract representation of ${genre} music`
+    prompt: `abstract representation of ${genre} music`
   });
   const imageUrl = `data:image/png;base64,${imageString}`;
 
