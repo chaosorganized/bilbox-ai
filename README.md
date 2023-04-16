@@ -1,6 +1,5 @@
 # bilbox-ai
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/472b4fd9-fe75-40f6-bf5a-3f952ec3d644/deploy-status)](https://app.netlify.com/sites/bilbox-ai/deploys)
 
 ai-generated live youtube stream
 
