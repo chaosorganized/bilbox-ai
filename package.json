@@ -7,7 +7,7 @@
   "scripts": {
     "start": "NODE_ENV=production node index.js",
     "dev": "nodemon index.js",
-    "build": "mkdir -p dist && cp -r src/* dist",
+    "build": "echo 'Build command executed'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
