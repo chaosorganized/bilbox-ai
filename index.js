@@ -5,6 +5,7 @@ import { createImage } from './stream/video/video.js'
 import { getAudio } from './stream/audio/audio.js'
 import { google } from 'googleapis';
 import { authorizationUrl, oauth2Client } from './google/google.js';
+// import { transcode, stream } from './transcode/transcode.js';
 import ffmpegStatic from 'ffmpeg-static';
 import ffprobeStatic from 'ffprobe-static';
 import ffmpeg from 'fluent-ffmpeg';
@@ -234,35 +235,28 @@ app.get('/stream-v1', async (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Streaming Music</title>
         <style>
-        
           body {
             background-image: url('${imageUrl}');
             background-size: cover;
             background-position: center;
+            animation: fade 5s linear infinite;
             margin: 0;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
           }
-          body.stream-v1 {
-        animation: blurAnimation 10s linear infinite;
-        background-image: url(${imageUrl});
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-position: center center;
-      }
-      @keyframes blurAnimation {
-        0% { filter: blur(0); transform: translateX(0); }
-        50% { filter: blur(5px); transform: translateX(200px); }
-        100% { filter: blur(0); transform: translateX(0); }
-      }
+          @keyframes blurAnimation {
+            0% { filter: blur(0); transform: translateX(0); }
+            50% { filter: blur(5px); transform: translateX(200px); }
+            100% { filter: blur(0); transform: translateX(0); }
+          }
           audio {
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
           }
         </style>
       </head>
-      <body>
+      <body class="stream-v1">
         <audio controls autoplay loop>
           <source src="${audio}" type="audio/mpeg">
           Your browser does not support the audio element.
@@ -305,10 +299,8 @@ app.get('/oauth2callback', async (req, res) => {
   }
 });
 
+// Google stream - IN DEV
 
-app.get('/stream', (req, res) => {
-  return res.send(`<html><head></head><body><p>Stream coming soon</p></body></html>`);
-});
 
 
 app.get('/image-gen/:topic', async (req, res) => {
