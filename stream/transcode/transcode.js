@@ -1,103 +1,36 @@
 // AV Transcoding Coming Soon
-const { google } = require('googleapis');
-const fs = require('fs');
-const { Readable } = require('stream');
+import fs from 'fs';
+import path from 'path';
+import { google } from 'googleapis';
 
-async function streamVideo(auth) {
-  const drive = google.drive({ version: 'v3', auth });
-  const youtube = google.youtube({ version: 'v3', auth });
+var __dirname = path.resolve();
 
-  // Get the Google Drive file ID of the video to be streamed
-  const fileId = 'VIDEO_FILE_ID';
 
-  // Get the video file metadata from Google Drive
-  const { data } = await drive.files.get({ fileId, fields: 'name, size, mimeType' });
 
-  // Check if the file is a valid MP4 video
-  if (data.mimeType !== 'video/mp4') {
-    throw new Error('File is not a valid MP4 video');
-  }
 
-  // Create a readable stream from the Google Drive file
-  const stream = drive.files.get({ fileId, alt: 'media' }, { responseType: 'stream' }).then(response => {
-    return response.data;
+
+
+// transcode video
+const transcodeVideo = async(oauth2Client) => {
+  const driveClient = google.drive({version: 'v3', auth: oauth2Client});
+  const fileId = '1zNMg59CIBC5F7125IXHRrisoamYVA4dW'; // todo: replace with stream of files
+  const fileSrc = await driveClient.files.get({ fileId, alt: 'media' }, { responseType: 'stream' });
+  const fileDest = `${__dirname}/stream/transcode/${fileId}.mp4`;
+
+  const outputStream = fs.createWriteStream(fileDest);
+  await new Promise((resolve, reject) => {
+    fileSrc.data
+      .on('end', () => {
+        console.log('Transcoding complete');
+        resolve();
+      })
+      .on('error', error => {
+        console.error('Transcoding error:', error);
+        reject(error);
+      })
+      .pipe(outputStream);
   });
 
-  // Create a new broadcast on YouTube
-  const { data: broadcast } = await youtube.liveBroadcasts.insert({
-    part: ['snippet', 'status'],
-    requestBody: {
-      snippet: {
-        title: 'My Stream',
-        description: 'Description of my stream',
-        scheduledStartTime: new Date().toISOString(),
-      },
-      status: {
-        privacyStatus: 'unlisted', // can be 'public', 'unlisted', or 'private'
-      },
-    },
-  });
+  return fileDest;
+};
 
-  // Create a new stream on YouTube
-  const { data: streamInfo } = await youtube.liveStreams.insert({
-    part: ['snippet', 'cdn'],
-    requestBody: {
-      snippet: {
-        title: 'My Stream',
-      },
-      cdn: {
-        format: '720p',
-        ingestionType: 'rtmp',
-        resolution: 'variable',
-      },
-    },
-  });
-
-  // Bind the YouTube stream to the Google Drive video stream
-  const { data: bindResult } = await youtube.liveBroadcasts.bind({
-    part: ['id,snippet'],
-    requestBody: {
-      id: broadcast.id,
-      streamId: streamInfo.id,
-    },
-  });
-
-  // Get the RTMP ingestion URL and stream key for the YouTube stream
-  const rtmpUrl = streamInfo.cdn.ingestionInfo.ingestionAddress;
-  const streamKey = streamInfo.cdn.ingestionInfo.streamName;
-
-  // Initialize the stream to YouTube
-  const streamOptions = {
-    video: {
-      codec: 'h264',
-      resolution: '720x1280',
-      bitrate: 5000000,
-      fps: 30,
-    },
-    audio: {
-      codec: 'aac',
-      channels: 2,
-      bitrate: 128000,
-    },
-    rtmp: {
-      url: rtmpUrl,
-      key: streamKey,
-    },
-  };
-  const youtubeStream = youtube.liveStreams.list({
-    part: 'id,snippet,cdn',
-    id: streamInfo.id,
-  }, {
-    transformResponse: response => response.data,
-  }).then(response => {
-    const stream = new Readable({
-      read() {},
-    });
-    stream.pipe(fs.createWriteStream('output.flv'));
-    stream.push(response.cdn.ingestionInfo.backupIngestionAddress);
-    return stream;
-  });
-
-  // Stream the video from Google Drive to YouTube
-  stream.pipe(youtubeStream);
-}

@@ -1,4 +1,6 @@
-import request from 'request-promise';
+// import request from 'request-promise';
+
+import axios, {isCancel, AxiosError} from 'axios';
 
 export const getAudio = async ({genre = 'pop'} = {}) => {
   
@@ -6,7 +8,7 @@ export const getAudio = async ({genre = 'pop'} = {}) => {
   const url = `https://api.jamendo.com/v3.0/tracks/?client_id=${process.env.JAMENDO_CLIENT_ID}&format=json&limit=10&order=popularity_total&tags=${genre}`;
 
   try {
-    const body = await request(url);
+    const body = await axios.get(url);
     const data = JSON.parse(body);
     const tracks = data.results;
     if (tracks.length === 0) {
