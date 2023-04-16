@@ -340,6 +340,7 @@ app.get('/audio-gen/:genre', async (req, res) => {
   res.send(html);
 })
 
-app.listen(3000, () => {
-  console.log('server started');
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`server started on port ${port}: `,  app?.settings?.env);
 });
