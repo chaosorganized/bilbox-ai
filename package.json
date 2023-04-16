@@ -6,6 +6,8 @@
   "main": "index.js",
   "scripts": {
     "start": "npm i && node index.js",
+    "dev": "nodemon index.js",
+    "build": "mkdir -p dist && cp -r src/* dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
